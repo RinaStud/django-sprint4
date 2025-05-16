@@ -29,11 +29,11 @@ ALLOWED_HOSTS = [
     'localhost',
 ]
 
-# Application definition
+
 HANDLER500 = 'blog.views.custom_500'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# Указываем директорию, в которую будут сохраняться файлы писем:
+
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
 INSTALLED_APPS = [
