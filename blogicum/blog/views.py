@@ -10,6 +10,7 @@ from .forms import UserRegistrationForm, PostForm, CommentForm, UserProfileForm
 from .models import Category, Post, Comment
 
 
+PAGE = 10
 User = get_user_model()
 
 
@@ -17,12 +18,10 @@ def filter_posts(**kwargs):
     """Фильтрация постов."""
     return Post.objects.select_related(
         'category', 'location', 'author'
-    ).annotate(
-        comment_count=Count('comments')
     ).filter(**kwargs).order_by('-pub_date')
 
 
-def paginated_view(request, queryset, items_per_page=10):
+def paginated_view(request, queryset, items_per_page=PAGE):
     """Пагинация."""
     paginator = Paginator(queryset, items_per_page)
     page_number = request.GET.get('page')
@@ -38,7 +37,7 @@ def index(request):
         pub_date__lte=timezone.now()
     )
 
-    page_obj = paginated_view(request, all_posts, items_per_page=10)
+    page_obj = paginated_view(request, all_posts, items_per_page=PAGE)
     return render(
         request,
         'blog/index.html',
@@ -66,7 +65,7 @@ def post_detail(request, post_id):
 
     comments = post.comments.all().select_related(
         'author'
-    ).order_by('created_at')
+    )
     form = CommentForm()
 
     context = {
@@ -111,7 +110,7 @@ def category_posts(request, category_slug):
         if can_view_post:
             visible_posts.append(post)
 
-    page_obj = paginated_view(request, visible_posts, items_per_page=10)
+    page_obj = paginated_view(request, visible_posts, items_per_page=PAGE)
 
     return render(
         request,
@@ -140,8 +139,8 @@ def registration(request):
 def profile_view(request, username):
     """Детальный просмотр профиля пользователя."""
     user_obj = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author=user_obj).order_by('-pub_date')
-    page_obj = paginated_view(request, posts, items_per_page=10)
+    posts = Post.objects.filter(author=user_obj)
+    page_obj = paginated_view(request, posts, items_per_page=PAGE)
     return render(
         request, 'blog/profile.html',
         {'profile': user_obj, 'page_obj': page_obj}
@@ -198,8 +197,6 @@ def edit_post(request, post_id):
         form = PostForm(request.POST, files=request.FILES, instance=post)
         if form.is_valid():
             saved_post = form.save()
-            print("Uploaded image:", saved_post.image)
-            print("Image path:", saved_post.image.path)
             return redirect('blog:post_detail', post_id=saved_post.id)
     else:
         form = PostForm(instance=post)
@@ -229,8 +226,8 @@ def add_comment(request, post_id):
     """Добавление коммента к публикации."""
     post = get_object_or_404(Post, id=post_id)
 
-    if request.method == "POST":
-        form = CommentForm(request.POST or None)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.post = post
