@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Set, Tuple, Optional, Union
 
 from django.db.models import QuerySet, Model
+from django.forms import Form
 from django.http import HttpResponse
 
 from conftest import TitledUrlRepr
@@ -62,7 +63,7 @@ class DeleteTester(BaseTester):
         return redirect_to_page_repr
 
     def test_delete_item(
-        self, qs: QuerySet, delete_url_addr: str
+        self, qs: QuerySet, delete_url_addr: str, only_base_form: bool = False
     ) -> HttpResponse:
         instances_before: Set[Model] = set(qs.all())
 
@@ -94,6 +95,7 @@ class DeleteTester(BaseTester):
             delete_url_addr,
             self._item_adapter,
             qs=qs,
+            only_base_form=only_base_form,
         )
         assert can_delete, self.successful_delete_error
 
@@ -110,7 +112,26 @@ class DeleteTester(BaseTester):
         delete_url,
         item_to_delete_adapter,
         qs: QuerySet,
+        only_base_form: bool = False,
     ) -> Tuple[Optional[bool], Optional[HttpResponse]]:
+        if only_base_form:
+            try:
+                get_response = submitter.client.get(delete_url)
+            except Exception as error:
+                raise AssertionError(
+                    "При обработке GET-запроса автора комментария к странице "
+                    "удаления комментария возникло исключение: "
+                    f"{error}"
+                )
+            if 'form' in get_response.context:
+                assert isinstance(get_response.context['form'], Form), (
+                    "Убедитесь, что на страницу удаления комментария не "
+                    "передается форма, которая используются для создания "
+                    "комментария. При использовании класса `DeleteVeiw` из "
+                    "модуля `django.views.generic` для реализации view-класса "
+                    "для удаления комментариев не задавайте значение атрибута "
+                    "класса `form_class`."
+                )
         response = submitter.test_submit(url=delete_url, data={})
         deleted = qs.filter(id=item_to_delete_adapter.id).first() is None
         return deleted, response
