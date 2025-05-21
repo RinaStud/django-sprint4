@@ -4,7 +4,6 @@ from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.db.models import Count
 
 from .forms import UserRegistrationForm, PostForm, CommentForm, UserProfileForm
 from .models import Category, Post, Comment
