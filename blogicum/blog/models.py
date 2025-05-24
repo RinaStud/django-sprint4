@@ -35,11 +35,6 @@ class Category(PublishedModel):
             'цифры, дефис и подчёркивание.'
         )
     )
-    is_published = models.BooleanField(
-        default=True,
-        verbose_name='Опубликовано',
-        help_text='Снимите галочку, чтобы скрыть публикацию.'
-    )
 
     class Meta:
         verbose_name = 'категория'
@@ -53,11 +48,6 @@ class Location(PublishedModel):
     name = models.CharField(
         max_length=LENGTH_STR,
         verbose_name='Название места'
-    )
-    is_published = models.BooleanField(
-        default=True,
-        verbose_name='Опубликовано',
-        help_text='Снимите галочку, чтобы скрыть публикацию.'
     )
 
     class Meta:
@@ -98,15 +88,6 @@ class Post(PublishedModel):
         verbose_name='Категория'
     )
     image = models.ImageField(upload_to='post_images/', blank=True, null=True)
-    is_published = models.BooleanField(
-        default=True,
-        verbose_name='Опубликовано',
-        help_text='Снимите галочку, чтобы скрыть публикацию.'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Добавлено'
-    )
 
     class Meta:
         verbose_name = 'публикация'
@@ -122,15 +103,13 @@ class Post(PublishedModel):
         return self.comments.count()
 
 
-class Comment(models.Model):
+class Comment(PublishedModel):
     post = models.ForeignKey(
         'Post',
         on_delete=models.CASCADE,
         related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_published = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['created_at']
